@@ -43,10 +43,12 @@
 |                            | Audible Sampler Manuscript Cast Read       | `audible`, `sampler`, `cast`                        | `AudibleSamplerCastReadManuscriptToolchain`   |  v1.0   |
 | **Ebook**                  | PDF Ebook Full Manuscript                  | `ebook`, `pdf`, `full`                              | `EbookPdfFullManuscriptToolchain`             |  v2.0   |
 |                            | PDF Ebook Sampler                          | `ebook`, `pdf`, `sampler`                           | `EbookPdfSamplerManuscriptToolchain`          |  v2.0   |
+| **Print & Publishing**     | PDF Print Full Manuscript                  | `print`, `pdf`, `full`                              | `PrintPdfFullManuscriptToolchain`             |  v2.0   |
+|                            | PDF Print Sampler Manuscript               | `print`, `pdf`, `sampler`                           | `PrintPdfSamplerManuscriptToolchain`          |  v2.0   |
+|                            | InDesign Project                           | `indesign`, `project`, `full`                       | `InDesignProjectToolchain`                    |  v1.0   |
 | **Production**             | Final Draft Project                        | `finaldraft`, `project`                             | `FinalDraftProjectToolchain`                  |  v1.0   |
 |                            | Open Screenplay Format Project             | `osf`, `project`                                    | `OpenScreenplayFormatProjectToolchain`        |  v1.0   |
 |                            | Scrivener Project                          | `scrivener`, `project`                              | `ScrivenerProjectToolchain`                   |  v1.0   |
-|                            | InDesign Project                           | `indesign`, `project`                               | `InDesignProjectToolchain`                    |  v1.0   |
 |                            | Adobe Audition Project                     | `audition`, `project`                               | `AuditionProjectToolchain`                    |  v1.0   |
 |                            | Arbortext Advanced Print Publisher Project | `arbortext`, `project`                              | `ArbortextProjectToolchain`                   |  v1.0   |
 |                            | Table Read Script by Character             | `tableread`, `script`, `actor`                      | `TableReadScriptByCharacterToolchain`         |  v1.0   |
@@ -57,10 +59,13 @@
 |                            | Shooting Script by Scene                   | `shooting`, `script`, `scene`                       | `ShootingScriptBySceneToolchain`              |  v1.0   |
 |                            | Location Breakdown                         | `location`, `schedule`                              | `LocationBreakdownToolchain`                  |  v1.0   |
 |                            | Shot List                                  | `shotlist`, `schedule`                              | `ShotListToolchain`                           |  v1.0   |
+|                            | Film Script                                | `film`, `script`                                    | `FilmScriptToolchain`                         |  v1.0   |
+|                            | Stage Play Script                          | `stageplay`, `script`                               | `StagePlayScriptToolchain`                    |  v1.0   |
 |                            | BBC Radio Drama Script                     | `bbc`, `radio`, `drama`, `script`                   | `BBCRadioDramaScriptToolchain`                |  v1.0   |
 |                            | Storyboard                                 | `storyboard`, `visual`, `script`                    | `StoryboardToolchain`                         |  v1.0   |
 |                            | Previz                                     | `previz`, `visual`, `script`                        | `PrevizToolchain`                             |  v1.0   |
 |                            | Animatic                                   | `animatic`, `visual`, `script`                      | `AnimaticToolchain`                           |  v1.0   |
+|                            | Unreal Engine Animatic                     | `unreal`, `visual`, `script`                        | `UnrealEngineAnimaticToolchain`               |  v1.0   |
 |                            | Blackbox Video Render                      | `blackbox`,                                         | `LtxTxt2VidTestToolchain`                     |  v1.0   |
 | **HTML**                   | AO3 by chapter                             | `ao3`, `html`, `chapter`                            | `Ao3HtmlChapterToolchain`                     |  v2.0   |
 |                            | AO3 by scene                               | `ao3`, `html`, `scene`                              | `Ao3HtmlSceneToolchain`                       |  v2.0   |
