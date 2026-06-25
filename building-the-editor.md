@@ -12,7 +12,7 @@ This document covers everything needed to build, run, and ship the DNW Editor, w
 - Linux or WSL2 (WSL2 on Windows is supported; native NTFS paths are slow — see rsync note below)
 
 ```bash
-node --version   # should be v22.x
+node --version   # should be v24.x
 npm --version    # should be 10.x or 11.x
 ```
 
