@@ -2,6 +2,8 @@
 
 Target reader: senior developer who knows Python, TypeScript, C#, Linux, Windows/macOS, VSCode extensions, REST APIs. This document gets you from zero to a running local mesh in roughly two hours, assuming dependencies install without drama.
 
+---
+
 ## Platform
 
 Target and officially supported development platform: Ubuntu 26.04 LTS (Resolute Raccoon).
@@ -18,13 +20,14 @@ Windows native is single-service debugging only. Run one service in your IDE of 
 
 Install these. Versions matter.
 
-| Tool            | Version    | Platform | Notes                                                          |
-|-----------------|------------|----------|----------------------------------------------------------------|
-| Python          | 3.14       | All      | pyenv recommended                                             |
-| Node.js         | 24.x       | All      | Use nvm. `nvm install 24 && nvm use 24`                       |
-| .NET SDK        | 10.x       | All      | See below. Required for PBX and The Clacks only.              |
-| Git             | any recent | All      |                                                               |
-| process-compose | latest     | All      | Binaries included — see below                                 |
+| Tool            | Version    | Platform       | Notes                                                         |
+|-----------------|------------|----------------|---------------------------------------------------------------|
+| Python          | 3.14       | Linux / WSL2   | pyenv recommended                                            |
+| Python          | 3.14       | Windows native | python.org installer. Single-service debugging only.         |
+| Node.js         | 24.x       | All            | Use nvm. `nvm install 24 && nvm use 24`                      |
+| .NET SDK        | 10.x       | All            | See below. Required for PBX and The Clacks only.             |
+| Git             | any recent | All            |                                                              |
+| process-compose | latest     | Linux / WSL2   | Binaries included — see below                                |
 
 ### Python
 
@@ -67,43 +70,81 @@ Binaries live in `dnw-container/bin/` — you do not need to install it globally
 | `process-compose-macos` | macOS    |
 | `process-compose.exe`   | Windows  |
 
-If you need a fresh binary: https://github.com/F1bonacc1/process-compose/releases. Check with your lead before committing a new version — the mesh is sensitive to changes in process-compose.
+The binary is committed to the `dnw-container` repo. If it is missing, check your clone — do not download a new version without checking with your lead first. The mesh is sensitive to changes in process-compose.
+
+---
+
+## Environment Variables
+
+Three environment variables must be set in your shell before anything will work. Add these to your `~/.bashrc` (Linux/WSL2) or `~/.zshrc` (macOS):
+
+```bash
+export DNW_ROOT=/mnt/e/dnw                          # parent of all dnw-* repos
+export WORKSPACE_ROOT=/mnt/e/dnw/soap-a-grimdark-farce  # the project you are working on
+export SYSTEM_ROOT=/mnt/e/dnw/system                # system data directory
+```
+
+Adjust paths for your machine. On WSL2 accessing a Windows drive, `/mnt/e/` is the typical prefix.
+
+**These values are machine-specific and should not be listed in `.env`, nor committed anywhere. Every developer needs to set their own values as `run.py` checks for all three at startup and will tell you clearly if any are missing.
+
+Restart your terminal or `source ~/.bashrc` after adding them.
+
 ---
 
 ## Repository Layout
 
-Everything lives under a single root directory. On Windows this is typically `%USERHOME%\dnw`. On Linux/macOS, wherever you put it -- `~/dnw` is fine. This path is `DNW_ROOT` throughout all scripts and documentation.
+Everything lives under a single root directory at `DNW_ROOT`.
+
+Cloning repos into arbitrary locations is not supported as the build scripts, run scripts, and service discovery all assume a flat layout.
 
 ```
-dnw/                                            ← DNW_ROOT
+DNW_ROOT/                                       ← e.g. /mnt/e/dnw or ~/dnw
 ├── .venv-linux/                                ← Python venv for Linux/macOS
 ├── .venv-windows/                              ← Python venv for Windows (binary wheels differ)
-├── .env                                        ← shared config -- safe to commit, contains no secrets
+├── .env                                        ← shared config -- safe to commit and contains no secrets
+├── .env.local                                  ← secrets, gitignored and never committed
 ├── requirements.txt                            ← shared Python dependencies
-├── dnw-build/                                  ← build scripts for everything
-├── dnw-container/                              ← process-compose configs, binaries, launch scripts
+├── logs/                                       ← all service logs land here (gitignored)
+├── dnw-build/                                  ← build and run scripts for everything
+│   ├── run.py                                  ← start the full mesh
+│   ├── run-editor.py                           ← launch editor in extension debug mode
+│   ├── build.py                                ← orchestrator -- runs all build steps, e.g. extensions, dotnet, python
+│   ├── build-extensions.py                     ← compile and install VSCode extensions
+│   ├── build-dotnet.py                         ← build C# / .NET services
+│   ├── build-python.py                         ← setup Python services (pip install)
+│   ├── lib_build.py                            ← shared build library
+│   ├── lib_extensions_list.py                  ← canonical list of all VSCode extensions
+│   └── lib_services_list.py                    ← canonical list of all services
+├── dnw-container/                              ← process-compose config and binaries
 │   ├── bin/
 │   │   ├── process-compose-linux
 │   │   ├── process-compose-macos
 │   │   └── process-compose.exe
-│   ├── compose.yaml                            ← single compose file for all services
-│   ├── run.sh                                  ← Linux/macOS launch script
-│   └── run.ps1                                 ← Windows launch script
-├── dnw-workspace-engine/                       ← REST API backend for the editor filesystem
+│   └── compose.yaml                            ← generated — do not edit directly
+├── dnw-editor/                                 ← VSCode Web patch repo (quilt patches + pin)
+├── dnw-workspace-engine/                       ← workspace filesystem service + extensions
 │   ├── backend/src/
-│   ├── file-service-provider-extension/src/    ← VSCode Web extension (FileSystemProvider)
-│   ├── manuscript-view-extension/src/          ← VSCode Web extension (manuscript view))
-│   ├── lore-view-extension/src/                ← VSCode Web extension (lore view))
-│   └── lore-view-extension/src/                ← VSCode Web extension (lore view))
-├── dnw-heartbeat/                              ← service health / heartbeat
-│   └── backend/src/
+│   ├── file-system-provider-extension/src/     ← VSCode Web extension (FileSystemProvider)
+│   ├── manuscript-extension/src/          ← VSCode Web extension (manuscript view)
+│   ├── lore-extension/src/                ← VSCode Web extension (lore view)
+│   ├── of-note-extension/
+│   ├── build-extension/
+│   ├── project-extension/
+│   └── assets-extension/
 ├── dnw-library/                                ← shared Python library
+├── dnw-heartbeat/                              ← service health monitoring
 │   └── backend/src/
 ├── dnw-documentation/                          ← ports.md, hosts.md, architecture notes
-└── soap-a-grimdark-farce/                      ← a manuscript workspace
+└── soap-a-grimdark-farce/                      ← a manuscript workspace (example)
 ```
 
-Service repos follow the pattern `dnw-{service-name}/`. Each service has `backend/src/` and/or `client/src/` depending on what components it has. Not every service has both. The convention is still settling -- consistency within the codebase matters more than any particular choice.
+Service repos follow `dnw-{service-name}/`.
+Services with both a backend and VSCode extension(s) are co-located in the same repo.
+
+Not every service has both.
+
+`compose.yaml` is generated — do not edit it directly, edit the source topology and regenerate using generate-*.py scripts in dnw-build.
 
 ---
 
@@ -112,9 +153,10 @@ Service repos follow the pattern `dnw-{service-name}/`. Each service has `backen
 For a working editor stack:
 
 ```bash
+cd $DNW_ROOT
+git clone <remote>/dnw-build
 git clone <remote>/dnw-container
 git clone <remote>/dnw-workspace-engine
-git clone <remote>/dnw-workspace-client
 git clone <remote>/dnw-library
 git clone <remote>/dnw-editor
 git clone <remote>/dnw-documentation
@@ -122,7 +164,7 @@ git clone <remote>/dnw-documentation
 
 Clone all of them into the same parent directory. That parent directory becomes `DNW_ROOT`. Cloning all dnw-* repos is recommended -- the editor stack is only a small part of the overall mesh, and you will likely need to debug other services at some point.
 
-The entire stack can run on a single machine, but the architecture is designed to scale across multiple hosts. The mesh is a collection of loosely coupled services that communicate over HTTP. Each service has its own repo, and each repo has its own build and deployment process, though generally follows a consistent pattern. The mesh is designed to be resilient to service failures -- if one service goes down, the others continue to operate.
+The entire stack can run on a single machine, but the architecture is designed to scale across multiple hosts. The mesh is a collection of loosely coupled services that communicate over HTTP. Each service has its own repo, and generally follows a consistent pattern. The mesh is designed to be resilient to service failures -- if one service goes down, the others continue to operate.
 
 `process-compose` is used for development and deployment, so what you run locally is what will be running in the production mesh.
 
@@ -130,11 +172,20 @@ The entire stack can run on a single machine, but the architecture is designed t
 
 ## First-Time Setup
 
-### 1. Create the virtual environment
+### 1. Set environment variables
 
-Binary wheels are platform-specific -- Linux and Windows venvs cannot share packages. Create the venv for your platform from `DNW_ROOT`:
+Add to `~/.bashrc` and restart your terminal:
 
-**Linux/macOS:**
+```bash
+export DNW_ROOT=/path/to/your/dnw
+export WORKSPACE_ROOT=/path/to/your/project
+export SYSTEM_ROOT=/path/to/your/system
+```
+
+### 2. Create the virtual environment
+Binary wheels are platform-specific -- Linux and Windows venvs cannot share packages.  Create the venv for your platform from `DNW_ROOT`:
+
+**Linux / WSL2:**
 
 ```bash
 python3.14 -m venv .venv-linux
@@ -142,7 +193,7 @@ source .venv-linux/bin/activate
 pip install -r requirements.txt
 ```
 
-**Windows:**
+**Windows native (single-service debugging only):**
 
 ```powershell
 py -3.14 -m venv .venv-windows
@@ -152,9 +203,28 @@ pip install -r requirements.txt
 
 Both can coexist in the same `DNW_ROOT` -- the `.venv-linux` and `.venv-windows` directories are independent.
 
-### 2. The `.env` file
+### 3. Set up Node.js dependencies
 
-The `.env` lives at `DNW_ROOT/.env` and is safe to commit -- it contains no secrets and there is no direct ingress to the mesh from outside localhost. All services point at this file.
+```bash
+cd $DNW_ROOT
+./dnw-build/build-extensions.py setup    # npm install in every extension
+```
+
+### 4. Compile extensions
+
+```bash
+./dnw-build/build-extensions.py compile  # npm run compile in every extension
+```
+
+### 5. Install extensions into dnw-editor
+
+```bash
+./dnw-build/build-extensions.py install  # compile + copy into dnw-editor/extensions/
+```
+
+### 6. The `.env` file
+
+`.env` lives at `DNW_ROOT/.env` and is committed to the main dnw-root repo. All the services read from it via process-compose or when debugging.
 
 ```env
 PYTHONUNBUFFERED=1
@@ -167,51 +237,35 @@ DNW_RUN_MODE=localhost
 MAPTILER_API_KEY=<your key>
 ```
 
-`DNW_ROOT` is **not** in `.env` -- it is injected at runtime by the launch script.
+`DNW_ROOT`, `WORKSPACE_ROOT`, and `SYSTEM_ROOT` are **not** in `.env` — they are machine-specific and live in `~/.bashrc`.
 
-When running a service directly outside of process-compose (e.g. debugging in PyCharm), point the run configuration at `E:\dnw\.env` (or the equivalent path on your platform) as the env file. See the IDE Setup section below.
+.env is committed to our private repositories. It contains topology -- hosts, ports, modes, model names, identifiers.
 
-.env is committed to a private repository. 
-
-.env is committed to our private repositories. It contains topology -- hosts, ports, modes, model names, identifiers. It never contains credentials. If you find yourself wanting to put a secret in .env, the answer is .env.local which is gitignored.
-
-The architecture has no external ingress, so most things that look like secrets (e.g. the LLM API key) are localhost placeholders and belong in .env.
+The threat model for this codebase has no external ingress, so most things that look like secrets (e.g. the LLM API key) are localhost placeholders and belong in .env.
 
 The one current exception is MAPTILER_API_KEY which lives in .env until the mapping API replaces it entirely.
 
-The threat model for credential exposure requires a GitHub compromise, at which point the .env is the least of our problems. Credentials with real blast radius, e.g. production database access, signing keys and auth secrets belong in .env.local which is gitignored. A temporary third-party API key with a thirty-second revocation path does not.
+Credential exposure requires a GitHub compromise, at which point the .env is the least of our problems. Credentials with real blast radius, e.g. production database access, signing keys and auth secrets belong in .env.local which is gitignored. A temporary third-party API key with a thirty-second revocation path does not.
 
 ---
 
 ## Host File Configuration
 
-The service mesh uses named hosts. In local development all resolve to `127.0.0.1`. You can generate a new development hosts file by running `dnw-container/bin/generate-hosts.py` from `DNW_ROOT`. It will output a list of hostnames to add to your hosts file.
+The service mesh uses named hosts. In local development they should all resolve to `127.0.0.1`. You can generate a fresh hosts file:
 
-### Windows -- `C:\Windows\System32\drivers\etc\hosts`
-
-Open Notepad as Administrator:
-
-```
-127.0.0.1   workspace-engine
-127.0.0.1   heartbeat-editor
-127.0.0.1   mechanics-proxy
-127.0.0.1   commitment
-127.0.0.1   in-scene-terminal
-127.0.0.1   thesaurus
-127.0.0.1   lexicon-check
-127.0.0.1   lexicon-watch
-127.0.0.1   dependency-walker
+```bash
+python $DNW_ROOT/dnw-build/generate-hosts.py
 ```
 
-### Linux / macOS -- `/etc/hosts`
+Which will place a new hosts file in the current directory. 
+
+### Linux / macOS / WSL2 — `/etc/hosts`
 
 ```bash
 sudo nano /etc/hosts
 ```
 
-Add the same entries.
-
-**WSL2 note:** editing the Windows hosts file is sufficient -- WSL2 inherits Windows DNS resolution for `127.0.0.1` mappings. You do not need to edit `/etc/hosts` inside the WSL2 distro separately.
+**WSL2 note:** editing the Windows hosts file at `C:\Windows\System32\drivers\etc\hosts` is sufficient — WSL2 inherits Windows DNS resolution. You do not need to edit `/etc/hosts` inside the WSL2 distro separately.
 
 For the authoritative list, see `dnw-documentation/hosts.md`.
 
@@ -219,60 +273,39 @@ For the authoritative list, see `dnw-documentation/hosts.md`.
 
 ## Launch the Mesh
 
-Single entry point in `dnw-container/`. The scripts resolve `DNW_ROOT` from their own location -- no hardcoded paths.
-
-### Linux / macOS
+The entry point is `dnw-build/run.py`. It performs pre-flight checks, sets the environment, and hands off to process-compose.
 
 ```bash
-cd $DNW_ROOT/dnw-container
-./run.sh
+cd $DNW_ROOT
+./dnw-build/run.py
 ```
 
-`run.sh`:
-```bash
-#!/usr/bin/env bash
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-export DNW_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-export PYTHONPATH="${DNW_ROOT}/:${DNW_ROOT}/dnw-library/src:./src:./"
+Pre-flight checks (all must pass before process-compose starts):
 
-if [[ "$(uname)" == "Darwin" ]]; then
-    PC_BIN="./bin/process-compose-macos"
-else
-    PC_BIN="./bin/process-compose-linux"
-fi
+- `DNW_ROOT` is set
+- `WORKSPACE_ROOT` is set and exists on disk
+- `SYSTEM_ROOT` is set
+- `DNW_ROOT/.env` exists
+- process-compose binary is present
+- `dnw-container/compose.yaml` exists
 
-cd "${SCRIPT_DIR}"
-$PC_BIN -f compose.yaml -L mesh.log
-```
-
-### Windows
-
-```powershell
-cd $env:DNW_ROOT\dnw-container
-.\run.ps1
-```
-
-`run.ps1`:
-```powershell
-$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$env:DNW_ROOT = (Resolve-Path "$ScriptDir\..").Path
-$env:PYTHONPATH = "$env:DNW_ROOT\;$env:DNW_ROOT\dnw-library\src;.\src;.\"
-Set-Location $ScriptDir
-.\bin\process-compose.exe -f compose.yaml -L mesh.log
-```
+If any check fails, `run.py` reports all failures at once with specific instructions for each.
 
 ### What healthy looks like
 
-process-compose opens a TUI. All services should reach `Running` or `Healthy` within 60–90 seconds. The workspace engine is the dependency anchor -- if it fails, most other services will not start.
+process-compose opens a TUI. All services should reach `Running` or `Healthy` within 60–90 seconds.
+
+
+The workspace engine is the dependency anchor — if it fails, most other services will not start.
 
 Key log line:
 ```
-[INFO]-[workspace-engine] - Workspace Engine Service ready -- version 1.0.0 on port 2040
+[INFO]-[workspace-engine] - Workspace Engine Service ready — version 1.0.0 on port 2040
 ```
 
-Logs are also written to `dnw-container/mesh.log`. To follow without the TUI:
+Logs are written to `DNW_ROOT/logs/mesh.log`:
 ```bash
-tail -f dnw-container/mesh.log
+tail -f $DNW_ROOT/logs/mesh.log
 ```
 
 For port assignments, see `dnw-documentation/ports.md`.
@@ -281,44 +314,45 @@ For port assignments, see `dnw-documentation/ports.md`.
 
 ## Open the Editor
 
-Once the mesh is healthy:
+Once the mesh is healthy, open:
 
-```bash
-cd ~/vscode-clean    # wherever you cloned vscode
-npm run dnw:build-serve
-```
+**http://localhost:2600**
 
-Open: **http://localhost:9001**
-
-The file explorer should show the manuscript workspace within a few seconds. If it's empty, check the workspace engine first:
+The file explorer should show the manuscript workspace within a few seconds. If it is empty, check the workspace engine:
 
 ```
 http://localhost:2040/monitoring/health
 ```
 
-For full VSCode Web build instructions, see `DNW-EDITOR-BUILD.md`.
+For full VSCode Web build instructions, see `building-the-editor.md`.
 
 ---
 
-## IDE Setup (PyCharm)
+## Debugging a Single Service
 
-When debugging a service directly in PyCharm rather than through process-compose, match this run configuration:
+The standard workflow:
 
-| Field | Value |
-|---|---|
-| Python interpreter | `E:\dnw\.venv-windows\Scripts\python.exe` (or `.venv-linux` equivalent) |
-| Script | `dnw-{service}/backend/src/main.py` |
-| Working directory | The manuscript workspace root, e.g. `E:\dnw\soap-a-grimdark-farce` |
-| Environment variables | `PYTHONUNBUFFERED=1` |
-| Paths to `.env` files | `E:\dnw\.env` |
+1. Start the full mesh: `./dnw-build/run.py`
+2. In the process-compose TUI, stop the service you want to debug (`F7`)
+3. Start that service in your IDE — it connects to the rest of the running mesh
+4. When done, restart it in the TUI or restart the mesh
 
-PyCharm's "Add content roots to PYTHONPATH" and "Add source roots to PYTHONPATH" checkboxes can remain enabled -- they don't conflict with the `.env` setup.
+Almost all services fail gracefully if dependencies are unavailable and announce the failure in their logs.
 
-The `.env` file path needs to be the absolute path to `DNW_ROOT/.env` on your machine. PyCharm does not resolve this from a variable.
+### PyCharm run configuration
 
-Bring up the mesh with the `process-compose` TUI first, then stop the service `F7` that you want to debug, and run it in PyCharm. The service will connect to the rest of the mesh as long as the other services are still running. Almost all services can be run standalone with no other parts of the mesh present. If a service needs to talk to another service, it will fail gracefully if the other service is not running and announce itself in the logs. 
+| Field                 | Value                                    |
+|-----------------------|------------------------------------------|
+| Python interpreter    | `$DNW_ROOT/.venv-{platform}}/bin/python` |
+| Script                | `dnw-{service}/backend/src/main.py`      |
+| Working directory     | `$DNW_ROOT/dnw-{service}/backend`        |
+| Environment variables | `PYTHONUNBUFFERED=1`                     |
+| Paths to `.env` files | `$DNW_ROOT/.env`                         |
 
----
+PyCharm's "Add content roots to PYTHONPATH" and "Add source roots to PYTHONPATH" can remain enabled.
+
+The `.env` file path needs to be the absolute path to `DNW_ROOT/.env` on your machine. PyCharm does not resolve this from a variable in this field.
+
 
 ## Stopping the Mesh
 
@@ -329,8 +363,110 @@ From the command line:
 # Linux/macOS
 ./bin/process-compose-linux down
 
-# Windows
-.\bin\process-compose.exe down
+---
+
+## Debugging a VSCode Extension
+
+To debug an extension using the VSCode Extension Development Host:
+
+1. Start the full mesh: `./dnw-build/run.py`
+2. Stop the editor process in the TUI (`F7` on `vscode-editor`)
+3. Run the editor in debug mode:
+
+```bash
+./dnw-build/run-editor.py --extension dnw-workspace-client
+```
+
+This launches VSCode with `--extensionDevelopmentPath` pointing at the named extension. Set breakpoints in the extension source — the Extension Development Host connects automatically.
+
+---
+
+## dnw-build — Build Scripts for Developers
+
+`dnw-build/` is the build and run tooling for the entire mesh. All scripts are Python with a shebang — run them directly.
+
+### Entry points
+
+| Script | Purpose |
+|---|---|
+| `run.py` | Start the full mesh via process-compose |
+| `run-editor.py` | Launch editor in extension debug mode |
+| `build.py` | Orchestrator — runs all build steps in order |
+| `build-extensions.py` | Compile and install VSCode extensions |
+| `build-dotnet.py` | Build C# / .NET services (PBX, The Clacks) |
+| `build-python.py` | Set up Python services (`pip install`) |
+
+### `build-extensions.py` commands
+
+```bash
+./dnw-build/build-extensions.py setup    # npm install in every extension (run once after clone)
+./dnw-build/build-extensions.py compile  # npm run compile in every extension
+./dnw-build/build-extensions.py install  # compile + copy into dnw-editor/extensions/
+
+# Target a single extension
+./dnw-build/build-extensions.py compile --only dnw-workspace-client
+./dnw-build/build-extensions.py compile --dry-run
+```
+
+### Shared libraries for custom scripts
+
+If you need to write a one-off build or automation script, import from the shared libraries:
+
+```python
+from lib_build import resolve_dnw_root, get_log_path
+from lib_extensions_list import EXTENSIONS
+from lib_services_list import PYTHON_SERVICES, DOTNET_SERVICES, ALL_SERVICES
+
+dnw_root = resolve_dnw_root()   # exits with clear error if DNW_ROOT not set
+```
+
+`lib_build.py` — environment resolution, log path helper. Not a script, import only.
+`lib_extensions_list.py` — canonical list of all VSCode extensions. Add new extensions here.
+`lib_services_list.py` — canonical lists of Python and .NET services. Add new services here.
+
+These lists are the single source of truth. The build scripts all read from them — you do not need to update scripts individually when adding a new extension or service.
+
+---
+
+## Canonical Extension Build Pattern
+
+Each extension's `package.json` must have a `compile` script producing `dist/extension.js`:
+
+```json
+"scripts": {
+    "compile": "node esbuild.mjs",
+    "watch": "node esbuild.mjs --watch"
+}
+```
+
+`esbuild.mjs` must use `format: 'cjs'` and `platform: 'browser'`:
+
+```javascript
+await esbuild.build({
+    entryPoints: ['src/extension.ts'],
+    bundle: true,
+    outfile: 'dist/extension.js',
+    format: 'cjs',           // required — VSCode Web extension host uses _loadCommonJSModule
+    platform: 'browser',     // required — no Node built-ins
+    external: ['vscode'],    // required — provided by the host
+    sourcemap: true,
+});
+```
+
+Common mistakes:
+- `format: 'esm'` — produces `export {}` at the top level, extension host rejects it
+- Missing `--external:vscode` — bundles the vscode stub, causes runtime errors
+- `platform: 'node'` — bundles Node built-ins that do not exist in the browser host
+
+---
+
+## Stopping the Mesh
+
+In the TUI: `q`, `Ctrl+C`, or `F10`.
+
+From the command line:
+```bash
+$DNW_ROOT/dnw-container/bin/process-compose-linux down
 ```
 
 ---
@@ -338,183 +474,37 @@ From the command line:
 ## Quick Reference
 
 ```bash
-# Start mesh (Linux/macOS)
-cd $DNW_ROOT/dnw-container && ./run.sh
+# Set required environment variables (add to ~/.bashrc)
+export DNW_ROOT=/mnt/e/dnw
+export WORKSPACE_ROOT=/mnt/e/dnw/soap-a-grimdark-farce
+export SYSTEM_ROOT=/mnt/e/dnw/system
 
-# Start mesh (Windows)
-cd $env:DNW_ROOT\dnw-container; .\run.ps1
+# First-time setup
+source .venv-linux/bin/activate
+pip install -r requirements.txt
+./dnw-build/build-extensions.py setup
+./dnw-build/build-extensions.py install
+
+# Start mesh
+./dnw-build/run.py
 
 # Check workspace engine health
 curl http://localhost:2040/monitoring/health
 
 # Open editor
-http://localhost:9001
+http://localhost:2600
 
 # Tail logs
-tail -f dnw-container/mesh.log
+tail -f $DNW_ROOT/logs/mesh.log
 
-# Build extension only
-cd $DNW_ROOT/dnw-workspace-client && npm run build
+# Compile a single extension
+./dnw-build/build-extensions.py compile --only dnw-workspace-client
 
-# Build and serve VSCode Web
-cd ~/vscode-clean && npm run dnw:build-serve
+# Debug an extension
+./dnw-build/run-editor.py --extension dnw-workspace-client
 
-# Activate venv (Linux/macOS)
+# Activate venv
 source $DNW_ROOT/.venv-linux/bin/activate
-
-# Activate venv (Windows)
-$env:DNW_ROOT\.venv-windows\Scripts\Activate.ps1
 ```
 
-Every service in the mesh has an accompanying `.http` file in the backend directory. These can be run in VSCode or Pycharm with the REST Client plugin. They are useful for testing service endpoints and debugging. All services also have a `/monitoring/health` endpoint that returns a JSON object with the service status. This is useful for checking if a service is running and healthy.
-
-Note that until CSP is fixed in the VSCode Web deployment, the Workspace Engine and Workspace Client must be run on the same host, and the Workspace Client must use localhost for lookup.
-
-
-## 8. Launch Script — `run-editor.sh` / `run-editor.ps1`
-
-These scripts replace the arcane `@vscode/test-web` incantation with a single command that builds the extension first and then starts the dev server.
-
-**What they do:**
-
-1. Resolve `VSCODE_WEB_PATH` from a known location relative to `DNW_ROOT`, or from an explicit env var.
-2. Build the extension (`npm run build` in `dnw-workspace-client`).
-3. Launch the dev server with the correct flags.
-4. Print the URL to open when ready.
-
-**Usage:**
-
-```bash
-# Linux / macOS / WSL2
-./dnw-container/run-editor.sh
-
-# Windows (PowerShell)
-.\dnw-container\run-editor.ps1
-```
-
-**Environment variables (all optional):**
-
-| Variable | Default | Purpose |
-|---|---|---|
-| `DNW_ROOT` | Parent of `dnw-container/` | Root of the DNW monorepo |
-| `VSCODE_WEB_PATH` | `../vscode-clean` or `~/vscode-clean` | Path to the compiled VSCode Web checkout |
-| `EXTENSION_DIR` | `$DNW_ROOT/dnw-workspace-client` | Path to the workspace client extension |
-| `DNW_EDITOR_PORT` | `9001` | Port for the dev server |
-| `DNW_FOLDER_URI` | `dnw:/` | Folder URI to open in the editor |
-
-**Resolution order for `VSCODE_WEB_PATH`:**
-
-1. Explicit `VSCODE_WEB_PATH` env var.
-2. `vscode-clean` as a sibling of `DNW_ROOT` (i.e. `E:/vscode-clean` if `DNW_ROOT` is `E:/dnw`).
-3. `~/vscode-clean`.
-4. Error with a clear message.
-
----
-
-## 9. `dnw:launch` script in `vscode-clean/package.json`
-
-Add this to the `scripts` block in `vscode-clean/package.json` (alongside the existing `dnw:serve` and `dnw:build-serve` entries):
-
-```json
-"dnw:launch": "node node_modules/@vscode/test-web/out/server/index.js --sourcesPath . --port ${DNW_EDITOR_PORT:-9001} --browserType none --extensionPath ${EXTENSION_DIR} --folder-uri ${DNW_FOLDER_URI:-dnw:/}"
-```
-
-> **Note:** This assumes `EXTENSION_DIR` is set. In practice, use `run-editor.sh` / `run-editor.ps1` rather than calling this directly — they handle the build step and env resolution. The `dnw:launch` entry exists so that `run-editor.sh` can delegate to it if preferred, and so the incantation is documented in one place.
-
----
-
-## 10. Build All Extensions — `build-extensions.sh` / `build-extensions.ps1`
-
-These scripts iterate the known extension directories under `DNW_ROOT` and run `npm run build` in each. Place them in `dnw-container/`.
-
-**Usage:**
-
-```bash
-# Linux / macOS / WSL2
-./dnw-container/build-extensions.sh
-
-# Windows (PowerShell)
-.\dnw-container\build-extensions.ps1
-```
-
-**Behaviour:**
-
-- Skips directories that don't exist or have no `package.json` (graceful, not fatal).
-- Reports pass/fail per extension.
-- Exits non-zero if any extension fails.
-- Prints a summary at the end.
-
-**Adding a new extension:**
-
-Open the script and append the directory name to the `EXTENSIONS` array near the top:
-
-```bash
-# build-extensions.sh
-EXTENSIONS=(
-    "dnw-workspace-client"
-    "dnw-your-new-extension"   # ← add here
-)
-```
-
-```powershell
-# build-extensions.ps1
-$Extensions = @(
-    "dnw-workspace-client",
-    "dnw-your-new-extension"   # ← add here
-)
-```
-
-**Canonical extension build pattern:**
-
-Each extension's `package.json` must have a `build` script that produces a deployable `dist/extension.js`. The `dnw-workspace-client` pattern is the reference:
-
-```json
-"scripts": {
-    "build": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --format=cjs --platform=browser --external:vscode --sourcemap",
-    "build:prod": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --format=cjs --platform=browser --external:vscode --minify",
-    "watch": "npm run build -- --watch"
-}
-```
-
-Key constraints:
-- `--format=cjs` — required. VSCode Web extension host uses `_loadCommonJSModule`.
-- `--platform=browser` — required. Node built-ins must not be bundled.
-- `--external:vscode` — required. The `vscode` module is provided by the host.
-
----
-
-## Updated Quick Reference
-
-```bash
-# Fresh build (once)
-cd ~/vscode-clean
-ELECTRON_SKIP_BINARY_DOWNLOAD=1 PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm install
-git apply patches/reporter-patch.diff
-npm run compile
-
-# Incremental build
-cd ~/vscode-clean && npm run compile
-
-# Build single extension
-cd /path/to/dnw-workspace-client && npm run build
-
-# Build all extensions
-./dnw-container/build-extensions.sh
-
-# Run dev server (build extension + launch)
-./dnw-container/run-editor.sh
-
-# Run dev server only (extension already built)
-cd ~/vscode-clean && npm run dnw:launch
-```
-
----
-
-## Still Needs Writing
-
-- `run-editor.sh` and `run-editor.ps1` committed to `dnw-container/` ✓ *(scripts produced, need committing)*
-- `build-extensions.sh` and `build-extensions.ps1` committed to `dnw-container/` ✓ *(scripts produced, need committing)*
-- `dnw:launch` added to `vscode-clean/package.json` scripts block
-- rsync script: NTFS → ext4 before launching, for WSL2 developers working from Windows paths
-- Step 2 quilt patches: remove Copilot, GitHub auth, telemetry from VSCode build
-- CSP fix documentation: `workspace-engine:2040` blocked in dev; use `localhost:2040` as workaround
+Every service has a `/monitoring/health` endpoint and an accompanying `.http` file in its backend directory for testing endpoints directly in VSCode or PyCharm with the REST Client plugin.
