@@ -20,14 +20,15 @@ Windows native is single-service debugging only. Run one service in your IDE of 
 
 Install these. Versions matter.
 
-| Tool            | Version    | Platform       | Notes                                                         |
-|-----------------|------------|----------------|---------------------------------------------------------------|
-| Python          | 3.14       | Linux / WSL2   | pyenv recommended                                            |
-| Python          | 3.14       | Windows native | python.org installer. Single-service debugging only.         |
-| Node.js         | 24.x       | All            | Use nvm. `nvm install 24 && nvm use 24`                      |
-| .NET SDK        | 10.x       | All            | See below. Required for PBX and The Clacks only.             |
-| Git             | any recent | All            |                                                              |
-| process-compose | latest     | Linux / WSL2   | Binaries included — see below                                |
+| Tool            | Version    | Platform       | Notes                                                      |
+|-----------------|------------|----------------|------------------------------------------------------------|
+| Python          | 3.14       | Linux / WSL2   | pyenv recommended                                          |
+| Python          | 3.14       | Windows native | python.org installer. Single-service debugging only.       |
+| Node.js         | 24.x       | All            | Use nvm. `nvm install 24 && nvm use 24`                    |
+| .NET SDK        | 10.x       | All            | See below. Required for PBX and The Clacks only.           |
+| Git             | any recent | All            |                                                            |
+| quilt           | any recent | Linux/WSL2     |                                                            |
+| process-compose | latest     | Linux / WSL2   | Binaries included — see below                              |
 
 ### Python
 
@@ -39,6 +40,11 @@ pyenv global 3.14
 python --version   # should print 3.14.x
 ```
 
+# Install quilt if not present
+```bash
+sudo apt install quilt
+```
+`
 ### Node.js
 
 ```bash
@@ -387,14 +393,14 @@ This launches VSCode with `--extensionDevelopmentPath` pointing at the named ext
 
 ### Entry points
 
-| Script | Purpose |
-|---|---|
-| `run.py` | Start the full mesh via process-compose |
-| `run-editor.py` | Launch editor in extension debug mode |
-| `build.py` | Orchestrator — runs all build steps in order |
-| `build-extensions.py` | Compile and install VSCode extensions |
-| `build-dotnet.py` | Build C# / .NET services (PBX, The Clacks) |
-| `build-python.py` | Set up Python services (`pip install`) |
+| Script                | Purpose                                      |
+|-----------------------|----------------------------------------------|
+| `run.py`              | Start the full mesh via process-compose      |
+| `run-editor.py`       | Launch editor in extension debug mode        |
+| `build.py`            | Orchestrator — runs all build steps in order |
+| `build-extensions.py` | Compile and install VSCode extensions        |
+| `build-dotnet.py`     | Build C# / .NET services (PBX, The Clacks)   |
+| `build-python.py`     | Set up Python services (`pip install`)       |
 
 ### `build-extensions.py` commands
 
@@ -412,7 +418,7 @@ This launches VSCode with `--extensionDevelopmentPath` pointing at the named ext
 
 If you need to write a one-off build or automation script, import from the shared libraries:
 
-```python
+```
 from lib_build import resolve_dnw_root, get_log_path
 from lib_extensions_list import EXTENSIONS
 from lib_services_list import PYTHON_SERVICES, DOTNET_SERVICES, ALL_SERVICES
@@ -433,9 +439,11 @@ These lists are the single source of truth. The build scripts all read from them
 Each extension's `package.json` must have a `compile` script producing `dist/extension.js`:
 
 ```json
-"scripts": {
+{
+  "scripts": {
     "compile": "node esbuild.mjs",
     "watch": "node esbuild.mjs --watch"
+  }
 }
 ```
 

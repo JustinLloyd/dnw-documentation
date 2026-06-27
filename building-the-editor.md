@@ -2,14 +2,19 @@
 
 This document covers everything needed to build, run, and ship the DNW Editor, which is a customised VSCode Web instance that hosts the DNW workspace client extension.
 
+Please read through dnw-documentation/dev-environment.md before starting — it contains important information about the development environment, prerequisites, and setup.
+
+There is a separate document for building the DNW mesh itself, located at dnw-documentation/building-the-mesh.md, and also read the dnw-editor/README.md for an overview of the patch stack and how it works.
+
 ---
 
 ## Prerequisites
 
 - Node.js 22.x (`nvm` recommended)
-- Python 3.10+ (for the workspace engine)
+- Python 3.10+ (for the workspace engine and build scripts)
 - `git`
 - Linux or WSL2 (WSL2 on Windows is supported; native NTFS paths are slow — see rsync note below)
+- Quilt (for patch management)
 
 ```bash
 node --version   # should be v24.x
@@ -87,12 +92,12 @@ node node_modules/@vscode/test-web/out/server/index.js \
 
 **Parameters:**
 
-| Flag | Purpose |
-|------|---------|
-| `--sourcesPath .` | Serve from compiled `out/` in this directory |
-| `--port 9001` | Port to listen on |
-| `--browserType none` | Don't auto-launch a browser (you open it yourself) |
-| `--extensionPath` | Path to a directory containing your sideloaded extension(s) |
+| Flag                 | Purpose                                                      |
+|----------------------|--------------------------------------------------------------|
+| `--sourcesPath .`    | Serve from compiled `out/` in this directory                 |
+| `--port 9001`        | Port to listen on                                            |
+| `--browserType none` | Don't auto-launch a browser (you open it yourself)           |
+| `--extensionPath`    | Path to a directory containing your sideloaded extension(s)  |
 | `--folder-uri dnw:/` | Open VSCode with the DNW virtual filesystem as the workspace |
 
 After starting, open `http://localhost:9001` in your browser.
@@ -178,9 +183,11 @@ Add this script to `~/vscode-clean/package.json` so it becomes part of the VSCod
 In `~/vscode-clean/package.json`, under `"scripts"`, add:
 
 ```json
-"dnw:serve": "node node_modules/@vscode/test-web/out/server/index.js --sourcesPath . --port 9001 --browserType none --extensionPath $DNW_EXTENSION_PATH --folder-uri dnw:/",
-"dnw:build-serve": "npm run compile && npm run dnw:serve",
-"dnw:watch-serve": "concurrently \"npm run watch\" \"npm run dnw:serve\""
+{
+  "dnw:serve": "node node_modules/@vscode/test-web/out/server/index.js --sourcesPath . --port 9001 --browserType none --extensionPath $DNW_EXTENSION_PATH --folder-uri dnw:/",
+  "dnw:build-serve": "npm run compile && npm run dnw:serve",
+  "dnw:watch-serve": "concurrently \"npm run watch\" \"npm run dnw:serve\""
+}
 ```
 
 Set the environment variable:
@@ -319,8 +326,8 @@ The extension is now part of the build — no external path required.
 
 Patches live in `~/vscode-clean/patches/` and are applied with `git apply` before compilation.
 
-| Patch file | What it does | Required for |
-|---|---|---|
+| Patch file            | What it does                                        | Required for                   |
+|-----------------------|-----------------------------------------------------|--------------------------------|
 | `reporter-patch.diff` | Makes TypeScript errors non-fatal in the gulp build | `npm run gulp vscode-web` only |
 
 Future patches (Step 2 — not yet applied):
@@ -348,7 +355,15 @@ If your code lives on an NTFS mount (e.g. `/mnt/e/...`), `npm run compile` and t
 rsync -av --delete /mnt/e/dnw/dnw-workspace-client/ ~/dnw-workspace-client/
 ```
 
-Then point `--extensionPath` at `~/dnw-workspace-client` instead of the NTFS path. Run the rsync before launching the dev server whenever you've made changes on the Windows side.
+Be sure to update your DNW_ROOT environment variable to point to the native path:
+
+```bash
+export DNW_ROOT=~/dnw-workspace-client
+```
+
+Then point `--extensionPath` at `$DNW_ROOT/dnw-workspace-engine/file-provider-client` instead of the NTFS path. Run the rsync before launching the dev server whenever you've made changes on the Windows side.
+
+The easier and faster way to work is to keep your code on a native Linux filesystem (ext4) and avoid NTFS mounts entirely. When editing in Rider or PyCharm, open the WSL2 path (`\\wsl$\Ubuntu-26.04\home\user\dnw`) instead of the Windows path (`E:\dnw`).
 
 ---
 
@@ -357,28 +372,35 @@ Then point `--extensionPath` at `~/dnw-workspace-client` instead of the NTFS pat
 
 # Fresh build (once)
 ```bash
-cd ~/vscode-clean
-ELECTRON_SKIP_BINARY_DOWNLOAD=1 PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm install
-git apply patches/reporter-patch.diff
-npm run compile
+cd $DNW_ROOT/dnw-build && ./setup.py && ./build.py
+#cd ~/vscode-clean
+#ELECTRON_SKIP_BINARY_DOWNLOAD=1 PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm install
+#quilt push -a
+
 ```
 
 # Incremental build
 ```bash
-cd ~/vscode-clean && npm run compile
+# regenerate yaml files, build .NET services, python service, vscode extensions, vscode, install extensions
+cd $DNW_ROOT/dnw-build && && ./build.py
 ```
 
 # Build extension
 ```bash
-cd /path/to/dnw-workspace-client && npm run build
+cd $DNW_ROOT/dnw-build/build.py --extension dnw-workspace-engine/file-provider-client
+```
+
+Alternatively, you can build the extension directly with `npm run compile` in the extension directory:
+```bash
+cd $DNW_ROOT/dnw-workspace-engine/file-provider-client && npm run compile
 ```
 
 # Run dev server
 ```bash
-cd ~/vscode-clean && npm run dnw:serve
+cd $DNW_ROOT/dnw-build && ./run.py
 ```
 
-# Build extension + run dev server together
+# Build extensions + run dev server together
 ```bash
-cd ~/vscode-clean && npm run dnw:build-serve
+cd $DNW_ROOT/dnw-build && ./build.py && ./run.py 
 ```
