@@ -10,7 +10,7 @@ Target and officially supported development platform: Ubuntu 26.04 LTS (Resolute
 
 WSL2 on Windows is Linux from the toolchain's perspective and is fully supported. Run Ubuntu 26.04 as your WSL2 distribution.
 
-macOS is best-effort -- most things work without modification, nothing is guaranteed.
+macOS is best-effort -- most things work without modification, but it is assumed you are comfortable installing the dependencies without assistance beyond the names of the packages. The mesh is designed to run on Linux, and some services have Linux-specific dependencies.
 
 Windows native is single-service debugging only. Run one service in your IDE of choice (Rider, PyCharm, WebStorm) pointed at a mesh running in WSL2. Do not attempt to run the full process-compose mesh on Windows native. You can try, it's not guaranteed to work or continue working.
 
@@ -21,22 +21,39 @@ Windows native is single-service debugging only. Run one service in your IDE of 
 Install these. Versions matter.
 
 | Tool            | Version    | Platform       | Notes                                                      |
-|-----------------|------------|----------------|------------------------------------------------------------|
-| Python          | 3.14       | Linux / WSL2   | pyenv recommended                                          |
+|-----------------|------------|----------------|----------------------------------------------------------------|
+| Python          | 3.14       | Linux / WSL2   | Ships standard on Ubuntu 26.04. Use pyenv to install on macOS. |
 | Python          | 3.14       | Windows native | python.org installer. Single-service debugging only.       |
-| Node.js         | 24.x       | All            | Use nvm. `nvm install 24 && nvm use 24`                    |
+| Node.js         | 24.x       | All            | Ubuntu 26.04 ships 24.x in the main archive. Use nvm on macOS. | 
 | .NET SDK        | 10.x       | All            | See below. Required for PBX and The Clacks only.           |
 | Git             | any recent | All            |                                                            |
 | quilt           | any recent | Linux/WSL2     |                                                            |
 | process-compose | latest     | Linux / WSL2   | Binaries included — see below                              |
 
+
+Complete Setup for Ubuntu 26.04 / WSL2:
+
+```bash
+cd $DNW_ROOT
+git clone <remote>/dnw-tools
+cd dnw-tools
+chmod +x setup.sh
+./setup.sh
+
+```
+
+Step by step instructions for Ubuntu 26.04 / WSL2:
+```bash
+sudo apt update
+sudo apt install -y build-essential pkg-config libx11-dev libx11-xcb-dev libxkbfile-dev libnotify-bin libkrb5-dev exiftool qpdf pdftk
+cd dnw-tools
+sudo dpkg -i prince_16.2-1_ubuntu26.04_amd64.deb
+```
+
 ### Python
 
 ```bash
-# Ubuntu 26.04 / WSL2 — pyenv recommended
-curl https://pyenv.run | bash
-pyenv install 3.14
-pyenv global 3.14
+sudo apt install -y python3.14 python3.14-venv python3.14-dev python-is-python3
 python --version   # should print 3.14.x
 ```
 
@@ -48,9 +65,8 @@ sudo apt install quilt
 ### Node.js
 
 ```bash
-# All platforms — nvm
-nvm install 24
-nvm use 24
+curl -fsSL https://deb.nodesource.com/setup_24.x | sudo -E bash -
+sudo apt install -y nodejs
 node --version   # should print v24.x.x
 ```
 
@@ -61,7 +77,6 @@ Required only if working on PBX or The Clacks (C# / YARP services) or performing
 On Ubuntu 26.04, .NET 10 is in the main archive — no PPAs or Microsoft feeds required:
 
 ```bash
-sudo apt update
 sudo apt install dotnet-sdk-10.0
 dotnet --version   # should print 10.x.x
 ```

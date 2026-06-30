@@ -1,4 +1,4 @@
-# Output Pipelines
+# DNW Output Pipelines
 
 | Category                   | Description                                | Keywords                                            | Toolchain Factory                             | Version |
 |----------------------------|--------------------------------------------|-----------------------------------------------------|-----------------------------------------------|:-------:|
@@ -60,13 +60,13 @@
 |                            | Location Breakdown                         | `location`, `schedule`                              | `LocationBreakdownToolchain`                  |  v1.0   |
 |                            | Shot List                                  | `shotlist`, `schedule`                              | `ShotListToolchain`                           |  v1.0   |
 |                            | Film Script                                | `film`, `script`                                    | `FilmScriptToolchain`                         |  v1.0   |
-|                            | Stage Play Script                          | `stageplay`, `script`                               | `StagePlayScriptToolchain`                    |  v1.0   |
+|                            | Stage Play Script                          | `stage`, `drama`, `script`                          | `StagePlayScriptToolchain`                    |  v1.0   |
 |                            | BBC Radio Drama Script                     | `bbc`, `radio`, `drama`, `script`                   | `BBCRadioDramaScriptToolchain`                |  v1.0   |
 |                            | Storyboard                                 | `storyboard`, `visual`, `script`                    | `StoryboardToolchain`                         |  v1.0   |
 |                            | Previz                                     | `previz`, `visual`, `script`                        | `PrevizToolchain`                             |  v1.0   |
 |                            | Animatic                                   | `animatic`, `visual`, `script`                      | `AnimaticToolchain`                           |  v1.0   |
 |                            | Unreal Engine Animatic                     | `unreal`, `visual`, `script`                        | `UnrealEngineAnimaticToolchain`               |  v1.0   |
-|                            | Blackbox Video Render                      | `blackbox`,                                         | `LtxTxt2VidTestToolchain`                     |  v1.0   |
+|                            | Blackbox Video Render                      | `blackbox`,                                         | `BlackBoxVideoTestToolchain`                  |  v1.0   |
 | **HTML**                   | AO3 by chapter                             | `ao3`, `html`, `chapter`                            | `Ao3HtmlChapterToolchain`                     |  v2.0   |
 |                            | AO3 by scene                               | `ao3`, `html`, `scene`                              | `Ao3HtmlSceneToolchain`                       |  v2.0   |
 |                            | Website Full Manuscript                    | `website`, `html`, `full`                           | `WebsiteHtmlManuscriptToolchain`              |  v2.0   |

@@ -29,8 +29,8 @@ This is a one-time setup. It clones the VSCode repository and compiles it from s
 
 ```bash
 # Clone VSCode at the pinned version
-git clone https://github.com/microsoft/vscode ~/vscode-clean
-cd ~/vscode-clean
+git clone https://github.com/microsoft/vscode $DNW_ROOT/dnw-editor/vscode
+cd $DNW_ROOT/dnw-editor/vscode
 git checkout 1.127.0
 
 # Install dependencies
@@ -59,7 +59,7 @@ The gulp build uses the older TypeScript compiler and hits 34 upstream errors in
 After the initial fresh build, subsequent rebuilds only recompile changed files:
 
 ```bash
-cd ~/vscode-clean
+cd $DNW_ROOT/dnw-editor/vscode
 npm run compile
 ```
 
@@ -80,7 +80,7 @@ This stays running and recompiles on save. You still need to restart the dev ser
 The dev server is `@vscode/test-web`, Microsoft's own tool for serving VSCode Web from sources. It serves from `out/`, not the gulp output directory.
 
 ```bash
-cd ~/vscode-clean
+cd $DNW_ROOT/dnw-editor/vscode
 
 node node_modules/@vscode/test-web/out/server/index.js \
     --sourcesPath . \
@@ -155,7 +155,7 @@ Add these scripts to `package.json` in `dnw-workspace-client`. This becomes the 
 Set the environment variable once in your shell profile:
 
 ```bash
-export VSCODE_WEB_PATH=~/vscode-clean
+export VSCODE_WEB_PATH=$DNW_ROOT/dnw-editor/vscode
 ```
 
 **Workflow:**
@@ -178,9 +178,9 @@ npm install --save-dev concurrently
 
 ## 6. Incremental Build + Run Script Patched into VSCode Web
 
-Add this script to `~/vscode-clean/package.json` so it becomes part of the VSCode project's own scripts. This is the canonical way to build-and-run from within the VSCode source tree.
+Add this script to `$DNW_ROOT/dnw-editor/vscode/package.json` so it becomes part of the VSCode project's own scripts. This is the canonical way to build-and-run from within the VSCode source tree.
 
-In `~/vscode-clean/package.json`, under `"scripts"`, add:
+In `$DNW_ROOT/dnw-editor/vscode/package.json`, under `"scripts"`, add:
 
 ```json
 {
@@ -199,7 +199,7 @@ export DNW_EXTENSION_PATH=/path/to/dnw-workspace-client
 **Usage:**
 
 ```bash
-cd ~/vscode-clean
+cd $DNW_ROOT/dnw-editor/vscode
 
 # Full incremental recompile, then serve
 npm run dnw:build-serve
@@ -218,8 +218,8 @@ Or as a standalone shell script `scripts/dnw-dev.sh` if you prefer not to touch 
 #!/usr/bin/env bash
 set -e
 
-VSCODE_ROOT="${VSCODE_ROOT:-$HOME/vscode-clean}"
-DNW_EXT="${DNW_EXTENSION_PATH:-/mnt/e/dnw/dnw-workspace-client}"
+VSCODE_ROOT="${VSCODE_ROOT:-$DNW_ROOT/dnw-editor/vscode}"
+DNW_EXT="${DNW_EXTENSION_PATH:-$DNW_ROOT/dnw-workspace-engine/file-system-extension}"
 PORT="${DNW_PORT:-9001}"
 
 echo "==> Compiling VSCode..."
@@ -257,14 +257,14 @@ To ship `dnw-workspace-client` as a built-in extension baked into the VSCode Web
 ### Step 1: Copy the extension into VSCode's extensions directory
 
 ```bash
-cp -r /path/to/dnw-workspace-client ~/vscode-clean/extensions/dnw-workspace-client
+cp -r /path/to/dnw-workspace-client $DNW_ROOT/dnw-editor/vscode/extensions/dnw-workspace-engine/file-provider-client
 ```
 
 The directory name becomes the extension's internal ID. The `package.json` inside must have a matching `name` field.
 
 ### Step 2: Register it in the extensions list
 
-Open `~/vscode-clean/build/builtInExtensions.json`. Add an entry:
+Open `$DNW_ROOT/dnw-editor/vscode/build/builtInExtensions.json`. Add an entry:
 
 ```json
 {
@@ -280,10 +280,10 @@ For a purely local extension (no remote repo), the `repo` field can be empty or 
 
 The extension directory must contain its compiled output at the path specified in `package.json`'s `browser` (for web) or `main` (for desktop) field.
 
-For `dnw-workspace-client`, build it first:
+For `dnw-workspace-engine/file-system-extension`, build it first:
 
 ```bash
-cd ~/vscode-clean/extensions/dnw-workspace-client
+cd $DNW_ROOT/dnw-editor/vscode/extensions/dnw-workspace-engine/file-provider-client
 npx esbuild src/extension.ts \
     --bundle \
     --outfile=dist/extension.js \
@@ -295,7 +295,7 @@ npx esbuild src/extension.ts \
 ### Step 4: Compile VSCode Web
 
 ```bash
-cd ~/vscode-clean
+cd $DNW_ROOT/dnw-editor/vscode
 npm run compile
 ```
 
@@ -317,14 +317,14 @@ The extension is now part of the build — no external path required.
 
 - The extension's `package.json` `activationEvents` should include `"*"` to ensure activation on startup, or the specific events your extension listens for.
 - Built-in extensions cannot be disabled by the user the same way marketplace extensions can.
-- You must re-run `npm run compile` in `~/vscode-clean` after modifying the extension source — the build does not watch the `extensions/` subdirectory automatically.
+- You must re-run `npm run compile` in `$DNW_ROOT/dnw-editor/vscode` after modifying the extension source — the build does not watch the `extensions/` subdirectory automatically.
 - For active development, still use `--extensionPath` sideloading (step 3 above). Switch to built-in only for packaging a release.
 
 ---
 
 ## Patches
 
-Patches live in `~/vscode-clean/patches/` and are applied with `git apply` before compilation.
+Patches live in `$DNW_ROOT/dnw-editor/vscode/patches/` and are applied with `git apply` before compilation.
 
 | Patch file            | What it does                                        | Required for                   |
 |-----------------------|-----------------------------------------------------|--------------------------------|
@@ -339,7 +339,7 @@ Future patches (Step 2 — not yet applied):
 Apply all patches at once:
 
 ```bash
-cd ~/vscode-clean
+cd $DNW_ROOT/dnw-editor/vscode
 for p in patches/*.diff; do git apply "$p"; done
 ```
 
@@ -373,7 +373,6 @@ The easier and faster way to work is to keep your code on a native Linux filesys
 # Fresh build (once)
 ```bash
 cd $DNW_ROOT/dnw-build && ./setup.py && ./build.py
-#cd ~/vscode-clean
 #ELECTRON_SKIP_BINARY_DOWNLOAD=1 PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm install
 #quilt push -a
 
@@ -382,7 +381,7 @@ cd $DNW_ROOT/dnw-build && ./setup.py && ./build.py
 # Incremental build
 ```bash
 # regenerate yaml files, build .NET services, python service, vscode extensions, vscode, install extensions
-cd $DNW_ROOT/dnw-build && && ./build.py
+cd $DNW_ROOT/dnw-build && ./build.py
 ```
 
 # Build extension
