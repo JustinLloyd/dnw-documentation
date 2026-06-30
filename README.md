@@ -2,6 +2,7 @@
 
 > Logic Pro, for words. With pip install for long-form narrative fiction. And plugins.
 
+
 ## Problem Statement
 
 DNW is a **narrative intelligence workstation** -- a purpose-built environment where the AI works *with* the author, not instead of them.
@@ -44,9 +45,11 @@ The "write for me" market is well-served. The "write with me" market is devoid o
 
 ## Proposed Solution
 
+> I'm going to do to the production pipeline of the global entertainment and publishing industries what a DSLR and Photoshop did to the darkroom, what Illustrator did to mechanical drawings, what a BlackMagic URSA Mini Pro and Davinci Resolve did to filkmaking, what Figma did to the design brief and what WordPress did to the web development project. And I'm going to put the full capability of it in the hands of the creators, for free.
+
 The mental model is pair programming, not GitHub Copilot or sudowrite. The author writes. DNW watches, learns, and assists: flagging a character whose eye colour changed between chapters, surfacing a word the author has used fourteen times in the last three scenes, noting that a location described in Act One contradicts the map established in Act Three. It handles the mechanical burden of consistency so the author can stay in the creative space.
 
-DNW is built on three principles:
+DNW is built on four principles:
 
 **1. The manuscript belongs to the author.** DNW never trains on manuscript content. We have no interest in what authors write. Their creative work is private and secure.
 
@@ -75,6 +78,8 @@ The addressable market for DNW spans several overlapping creative communities:
 
 The individual author market is large, growing, and underserved by tools that take creative work seriously. The enterprise market is concentrated, high-value, and has no credible incumbent.
 
+> Democratize access to the capability, and then watch what happens to the creative output of the world. Just like we saw in every other industry when the barriers were removed.
+
 ---
 
 ## Market Segmentation
@@ -83,6 +88,8 @@ DNW is offered across six tiers designed to serve the full spectrum from hobbyis
 
 **Community Edition -- Free**
 The entry point. Full access to all writing tools except those that must be gated due to legal requirements, e.g. likeness cloning. Community and Hobbyist tiers are the acquisition funnel and are never feature-constrained or monetised beyond their tier price. The goal is to be genuinely useful to every author regardless of means.
+
+> Violent compression at the commodity layer has happened all throughout history, and it has always been a good thing for newcomers and a bad thing for incumbents. The more people who can afford to create, the more people will create. The people who want to create, who have something to say, who have a story to tell -- those are the people who change the world.
 
 **Hobbyist Edition -- $12/yr**
 Reserved editor with no queuing, more compute than Community. Priced at less than a large coffee and a fancy pastry at a major chain. This is a deliberate ceiling -- the Hobbyist tier will never cost more than that. Authors who love the product should be able to afford it without thinking about it.
@@ -105,7 +112,7 @@ DNW deployed on the customer's own infrastructure. For organisations with data s
 
 - **Purpose-built for narrative, not adapted from documents.** Every feature is designed around the specific cognitive demands of long-form fiction and screenplay.
 - **Version-pinned environments.** No forced upgrades. A professional workflow established on v4 is not disrupted by a v20 release.
-- **The manuscript stays private.** We never see it, never train on it, never store it beyond what's needed to serve the author's session. This is an architectural guarantee, not a policy.
+- **The manuscript stays private.** We don't want to see it, we don't train it, we don't store it beyond what's needed to serve the author's needs.
 - **"Write with me" not "write for me."** The AI surfaces, flags, and assists. It does not generate prose on the author's behalf unless explicitly asked. The author's voice remains the author's voice.
 - **No incumbent.** There is no tool that does what DNW does at any price point. The enterprise market is currently served by a combination of Word, Scrivener, and custom internal tooling. The bar to step over is exceptionally low.
 
